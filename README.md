@@ -72,10 +72,11 @@ cp .env.example .env
 
 - `AGENT_ROUTER_BASE_URL=http://127.0.0.1:1975`: Applicationが見る唯一のLLM Gateway。
 - `LLAMA_SERVER_BASE_URL=http://127.0.0.1:2067`: Agent Routerが見るBackend。
-- `OPIK_BASE_URL=http://127.0.0.1:5181`: Opik UI/API。
+- `OPIK_BASE_URL=http://127.0.0.1:5181`: Opik UI/API。`start-agent-router.sh` が OTLP endpoint をこの値から生成する。
+- `OPIK_ENABLED`: `true` なら Agent Router が Opik へ Trace を送り、`false` なら `OTEL_TRACES_EXPORTER=none` にする。
 - `TASK_ROUTER_DEFAULT_MODEL`: `Auto`の解決先。
 - `LLM_API_STYLE`: 初期値は`chat_completions`。`responses`も選択可能。
-- `OTEL_EXPORTER_OTLP_HEADERS`: self-hosted Opikのプロジェクト名。既定値は`projectName=agent-router-local`。
+- `OTEL_AIGW_SPAN_REQUEST_HEADER_ATTRIBUTES`: `X-Session-ID` と `X-Request-ID` を span 属性へ写す Header Mapping。
 - `OPENINFERENCE_HIDE_INPUTS` / `OPENINFERENCE_HIDE_OUTPUTS`: Opikへ入力・出力を送るかの設定。
 
 `/v1`は設定値に含めても含めなくても構いません。クライアントと起動スクリプトが二重付加を防ぎます。
@@ -126,10 +127,11 @@ make agent-router-up
 ```text
 OPENAI_BASE_URL=http://127.0.0.1:2067/v1
 OPENAI_API_KEY=<LLAMA_SERVER_API_KEY>
-OTEL_TRACES_EXPORTER=otlp
+OTEL_TRACES_EXPORTER=otlp            # OPIK_ENABLED=false のときは none
 OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
-OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://127.0.0.1:5181/api/v1/private/otel/v1/traces
+OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=<OPIK_BASE_URL>/api/v1/private/otel/v1/traces
 AI_GATEWAY_TRACING_SEMCONV=openinference
+OTEL_AIGW_SPAN_REQUEST_HEADER_ATTRIBUTES=agent-session-id:session.id,x-session-id:session.id,x-request-id:request.id
 ```
 
 Agent RouterのOpenAI互換入口は`http://127.0.0.1:1975/v1`、Admin endpointは`http://127.0.0.1:1064/health`と`/metrics`です。
@@ -144,6 +146,18 @@ async with LLMGatewayClient.from_env() as client:
     text = await client.complete("Hello", model="Auto")
 ```
 
+既存コード向けの互換APIも残しています。
+
+```python
+from llm_gateway import LlamaServerEnvConfig, call_llama_server
+
+
+cfg = LlamaServerEnvConfig.from_env()
+text = await cfg.complete("Hello")
+
+text = await call_llama_server(openai_client, model, prompt, enable_thinking=False)
+```
+
 内部経路は必ず次の順番になります。
 
 ```text
@@ -153,7 +167,7 @@ Application
   -> llama-server :2067/v1
 ```
 
-`LlamaServerEnvConfig`は既存利用者向けの互換名として`LLMGatewayEnvConfig`のaliasを提供しています。`call_llama_server`も内部ではAgent Routerへ委譲します。
+`LlamaServerEnvConfig`は既存の `cfg.complete("Hello")` APIを維持する互換wrapperです。内部では`LLMGatewayClient`へ委譲します。`call_llama_server`は新シグネチャ `call_llama_server(prompt, *, model="Auto")` に加え、旧シグネチャ `call_llama_server(client, model, prompt, *, enable_thinking=...)` も受け付けます。旧`client`は使わず、必ずAgent Router経由になります。
 
 ## Tests
 
@@ -174,9 +188,9 @@ Integration Testは次を確認します。
 - llama-serverとAgent Routerのhealth
 - `Application -> DummyTaskRouter -> Agent Router -> llama-server`
 - Chat Completions経路
-- Responses API経路
+- Responses APIの Test A（llama-server直接）と Test B（Agent Router経由）
 - Autoモデル解決
-- thinking/top_k/min_pを含むリクエストのE2E到達
+- thinking/top_k/min_pを含むリクエストのE2E到達と、Opik traceによるパラメータ検証
 
 ## Smoke test
 

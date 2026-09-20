@@ -18,12 +18,18 @@ http://127.0.0.1:5181/api/v1/private/otel/v1/traces
 設定例:
 
 ```dotenv
-OTEL_TRACES_EXPORTER=otlp
-OTEL_METRICS_EXPORTER=none
-OTEL_LOGS_EXPORTER=none
-OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
-OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://127.0.0.1:5181/api/v1/private/otel/v1/traces
+OPIK_ENABLED=true
+OPIK_BASE_URL=http://127.0.0.1:5181
+OPIK_PROJECT_NAME=agent-router-local
 ```
+
+`./scripts/start-agent-router.sh` は `OPIK_BASE_URL` から次を生成します。
+
+```text
+http://127.0.0.1:5181/api/v1/private/otel/v1/traces
+```
+
+`OPIK_ENABLED=false` にすると Agent Router の `OTEL_TRACES_EXPORTER` は `none` になります。
 
 ```bash
 ./scripts/check-opik.sh

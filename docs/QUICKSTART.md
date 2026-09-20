@@ -123,6 +123,6 @@ make integration
 
 - `aigw was not found` → PATH に `aigw` を置くか `AIGW_BIN` を指定
 - Opik OTLP が届かない → `make opik-up` 後に `./scripts/check-opik.sh`
-- Responses API 404 → 初期経路は Chat Completions。既知制限は [実装レポート](./agent-router-opik-implementation-report.md)
+- Responses API 404 → 実測は Test A も Test B も 404。起点は llama-server（aiohttp/exl3）が `/v1/responses` 未実装なこと。初期経路は Chat Completions で問題ない。Responses を通したいなら `:2067` 側の実装が必要。Agent Router 1.1自体がResponses非対応とは判断しない。詳細は [実装レポート](./agent-router-opik-implementation-report.md)
 
 詳細は [README](../README.md) を参照してください。

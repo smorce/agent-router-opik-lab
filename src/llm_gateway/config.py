@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 from collections.abc import Mapping
 from dataclasses import dataclass, field
+from typing import Any
 
 DEFAULT_MODEL = "qwen3.8-27b-exl3-3.5bpw-wm"
 
@@ -197,3 +198,32 @@ class LLMGatewayEnvConfig:
             "max_tokens": self.max_tokens,
             "chat_template_kwargs": {"enable_thinking": self.thinking},
         }
+
+
+class LlamaServerEnvConfig:
+    """既存の `cfg.complete(prompt)` APIを維持する互換wrapper。
+
+    内部ではAgent Router経由の `LLMGatewayClient` に委譲する。
+    """
+
+    def __init__(self, gateway_config: LLMGatewayEnvConfig) -> None:
+        self._gateway_config = gateway_config
+
+    @classmethod
+    def from_env(
+        cls,
+        environ: Mapping[str, str] | None = None,
+    ) -> LlamaServerEnvConfig:
+        return cls(LLMGatewayEnvConfig.from_env(environ))
+
+    async def complete(self, prompt: str) -> str:
+        from .client import LLMGatewayClient
+
+        async with LLMGatewayClient(self._gateway_config) as client:
+            return await client.complete(prompt, model="Auto")
+
+    def __getattr__(self, name: str) -> Any:
+        return getattr(self._gateway_config, name)
+
+    def __repr__(self) -> str:
+        return f"LlamaServerEnvConfig({self._gateway_config!r})"

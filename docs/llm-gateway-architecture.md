@@ -62,11 +62,13 @@ extra_body.min_p
 extra_body.chat_template_kwargs.enable_thinking
 ```
 
-Responses APIは削除せず、`LLM_API_STYLE=responses`で選択できる。
+Responses APIは削除せず、`LLM_API_STYLE=responses`で選択できる。Agent Router 1.1の公式仕様では `POST /v1/responses` はFully Supportedである。実測では llama-server 直接（Test A）も Agent Router 経由（Test B）も 404 で、起点は `:2067` の aiohttp/exl3 サーバーが Responses 未実装なことである。今回の初期経路は Chat Completions で問題ない。Responses を通したいなら、`:2067` 側が `/v1/responses` を実装する必要がある。
 
 ## セキュリティと観測
 
 - API keyとAuthorization headerはログへ出さない。
 - Applicationログへプロンプト全文を出さない。
+- Applicationは `X-Request-ID` と `X-Session-ID` に加え、Agent Router既定の `agent-session-id` も送る。
+- Agent Routerは Header Mapping で `x-session-id → session.id` と `x-request-id → request.id` をspanへ写す。
 - `OPENINFERENCE_HIDE_INPUTS`と`OPENINFERENCE_HIDE_OUTPUTS`で内容の収集を制御する。
 - 本番で入力・出力を保存する前に、個人情報・機密情報の扱いを確認する。

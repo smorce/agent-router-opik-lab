@@ -86,6 +86,32 @@ async def test_complete_routes_auto_and_preserves_llama_parameters() -> None:
 
 
 @pytest.mark.asyncio
+async def test_complete_maps_session_and_request_ids_for_opik() -> None:
+    chat = FakeChatCompletions(
+        [SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(content="ok"))])]
+    )
+    client = LLMGatewayClient(
+        make_config(),
+        openai_client=FakeOpenAIClient(chat),
+        sleeper=lambda _: _noop(),
+    )
+
+    result = await client.complete(
+        "Hello",
+        model="Auto",
+        request_id="req-42",
+        session_id="sess-99",
+    )
+
+    assert result == "ok"
+    assert chat.calls[0]["extra_headers"] == {
+        "X-Request-ID": "req-42",
+        "X-Session-ID": "sess-99",
+        "agent-session-id": "sess-99",
+    }
+
+
+@pytest.mark.asyncio
 async def test_responses_api_remains_available() -> None:
     chat = FakeChatCompletions([])
     responses = FakeResponses(SimpleNamespace(output_text="response text"))

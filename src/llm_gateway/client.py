@@ -4,7 +4,8 @@ import asyncio
 import logging
 import time
 from collections.abc import Awaitable, Callable, Mapping
-from typing import Any
+from dataclasses import replace
+from typing import Any, overload
 from uuid import uuid4
 
 from openai import (
@@ -115,6 +116,8 @@ class LLMGatewayClient:
         headers = {"X-Request-ID": request_id}
         if session_id:
             headers["X-Session-ID"] = session_id
+            # Agent Routerの既定Header Mappingは agent-session-id → session.id。
+            headers["agent-session-id"] = session_id
 
         started_at = time.monotonic()
         for attempt in range(self.config.max_retries + 1):
@@ -246,15 +249,110 @@ class LLMGatewayClient:
         await self.close()
 
 
+def _apply_legacy_generation_overrides(
+    config: LLMGatewayEnvConfig,
+    *,
+    enable_thinking: bool | None,
+    temperature: float | None,
+    top_p: float | None,
+    top_k: int | None,
+    min_p: float | None,
+    max_tokens: int | None,
+) -> LLMGatewayEnvConfig:
+    return replace(
+        config,
+        thinking=config.thinking if enable_thinking is None else enable_thinking,
+        temperature=config.temperature if temperature is None else temperature,
+        top_p=config.top_p if top_p is None else top_p,
+        top_k=config.top_k if top_k is None else top_k,
+        min_p=config.min_p if min_p is None else min_p,
+        max_tokens=config.max_tokens if max_tokens is None else max_tokens,
+    )
+
+
+@overload
 async def call_llama_server(
     prompt: str,
     *,
     model: str = "Auto",
     config: LLMGatewayEnvConfig | None = None,
+    enable_thinking: bool | None = None,
+    temperature: float | None = None,
+    top_p: float | None = None,
+    top_k: int | None = None,
+    min_p: float | None = None,
+    max_tokens: int | None = None,
+) -> str: ...
+
+
+@overload
+async def call_llama_server(
+    client: Any,
+    model: str,
+    prompt: str,
+    *,
+    enable_thinking: bool | None = None,
+    temperature: float | None = None,
+    top_p: float | None = None,
+    top_k: int | None = None,
+    min_p: float | None = None,
+    max_tokens: int | None = None,
+    config: LLMGatewayEnvConfig | None = None,
+) -> str: ...
+
+
+async def call_llama_server(
+    prompt_or_client: Any,
+    model: str | None = None,
+    prompt: str | None = None,
+    *,
+    enable_thinking: bool | None = None,
+    temperature: float | None = None,
+    top_p: float | None = None,
+    top_k: int | None = None,
+    min_p: float | None = None,
+    max_tokens: int | None = None,
+    config: LLMGatewayEnvConfig | None = None,
 ) -> str:
-    """Compatibility wrapper retaining the historical function name."""
-    client = LLMGatewayClient(config or LLMGatewayEnvConfig.from_env())
+    """既存 `call_llama_server` 名を維持する互換関数。
+
+    新API:
+        await call_llama_server(prompt, *, model="Auto", config=None)
+
+    旧API:
+        await call_llama_server(client, model, prompt, *, enable_thinking=..., temperature=...)
+
+    旧シグネチャの `client` はllama-server直結用だったため使わず、
+    内部では必ずAgent Router経由の `LLMGatewayClient` に委譲する。
+    """
+    if isinstance(prompt_or_client, str):
+        if prompt is not None:
+            raise TypeError("call_llama_server() got multiple values for prompt")
+        resolved_prompt = prompt_or_client
+        resolved_model = model if model is not None else "Auto"
+    else:
+        if prompt is None:
+            raise TypeError(
+                "legacy call_llama_server(client, model, prompt) requires prompt"
+            )
+        if model is None:
+            raise TypeError(
+                "legacy call_llama_server(client, model, prompt) requires model"
+            )
+        resolved_prompt = prompt
+        resolved_model = model
+
+    gateway_config = _apply_legacy_generation_overrides(
+        config or LLMGatewayEnvConfig.from_env(),
+        enable_thinking=enable_thinking,
+        temperature=temperature,
+        top_p=top_p,
+        top_k=top_k,
+        min_p=min_p,
+        max_tokens=max_tokens,
+    )
+    client = LLMGatewayClient(gateway_config)
     try:
-        return await client.complete(prompt, model=model)
+        return await client.complete(resolved_prompt, model=resolved_model)
     finally:
         await client.close()

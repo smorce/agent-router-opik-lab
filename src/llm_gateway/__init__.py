@@ -1,5 +1,5 @@
 from .client import LLMGatewayClient, call_llama_server
-from .config import LLMGatewayEnvConfig, normalize_openai_base_url
+from .config import LLMGatewayEnvConfig, LlamaServerEnvConfig, normalize_openai_base_url
 from .errors import (
     GatewayConnectionError,
     GatewayTimeoutError,
@@ -9,8 +9,6 @@ from .errors import (
     TaskRoutingError,
 )
 from .routing import DummyTaskRouter, RouteDecision, TaskRouter
-
-LlamaServerEnvConfig = LLMGatewayEnvConfig
 
 __all__ = [
     "DummyTaskRouter",
