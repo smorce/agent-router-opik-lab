@@ -6,6 +6,8 @@ build-backend = "hatchling.build"
 name = "agent-router-opik-lab"
 version = "0.1.0"
 description = "OpenAI-compatible LLM gateway client with pluggable task routing"
+readme = "README.md"
+license = "Apache-2.0"
 requires-python = ">=3.12"
 dependencies = [
     "openai>=1.68.0",

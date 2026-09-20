@@ -236,3 +236,7 @@ http://127.0.0.1:5181/api/v1/private/otel/v1/traces
 - Kubernetes、Fallback、複数Provider、Quota、Rate Limit、MCP Gatewayは実装していません。
 - このリポジトリはOpik本体を起動・再インストールしません。
 - OpenTelemetryの最終的な収集成否は、Agent Router v1.1.0と起動済みOpikの実行ログおよびOpik UIで確認してください。
+
+## License
+
+Apache License 2.0. 詳細は [LICENSE](LICENSE) を参照してください。
