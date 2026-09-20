@@ -1,7 +1,5 @@
 # Opikローカル接続
 
-![Opik](assets/comet-opik-readable-high.gif)
-
 Opik本体は公式`comet-ml/opik`リポジトリのLocal installationを使用します。このリポジトリはOpikのDocker Compose定義を複製せず、起動スクリプトと`http://127.0.0.1:5181`への接続確認だけを担当します。
 
 ```bash

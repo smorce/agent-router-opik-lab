@@ -1,5 +1,7 @@
 # Agent Router + Opik ローカルLLMゲートウェイ
 
+![Opik](assets/comet-opik-readable-high.gif)
+
 Applicationからllama-serverを直接呼び出さず、Task RouterとAgent Routerを経由してローカルLLMへ接続する最小構成です。Task Routerは現在 `DummyTaskRouter` ですが、将来ClassifierやLLMベースの実装へ差し替えられるインターフェースに分離しています。
 
 最短手順は [Quick Start](docs/QUICKSTART.md) を参照してください。
