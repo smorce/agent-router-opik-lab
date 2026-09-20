@@ -202,6 +202,7 @@ http://127.0.0.1:5181/api/v1/private/otel/v1/traces
 ## localhost、127.0.0.1、Docker、WSL2
 
 - ApplicationとAgent Routerを同じWSL環境で動かす場合、`127.0.0.1`は同じWSL環境を指します。
+- Windowsブラウザから見る場合も、通常は同じ `http://127.0.0.1:...` で開けます。Agent Router AdminはIPv4専用proxy経由で `http://127.0.0.1:1064/health` を公開します（`make agent-router-up`）。
 - Dockerコンテナ内の`127.0.0.1`はホストや別コンテナではありません。コンテナからホスト上のllama-serverへ接続する場合は、Docker環境に応じて`host.docker.internal`などを設定してください。
 - WSL2とWindowsネイティブプロセス間では、localhost転送の有無やWindows Firewallにより到達性が変わります。
 - Agent Router Standalone CLIはLinux/macOS向けです。Windowsネイティブでの動作保証はしません。

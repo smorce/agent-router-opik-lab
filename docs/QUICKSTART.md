@@ -61,6 +61,24 @@ make agent-router-up
 入口: `http://127.0.0.1:1975/v1`  
 Admin: `http://127.0.0.1:1064/health`
 
+### Windowsブラウザから開く場合
+
+WSL2上で起動していれば、Windows側の Edge / Chrome からも同じ `127.0.0.1` で開けます。
+
+| 用途 | WindowsブラウザのURL |
+| --- | --- |
+| Agent Router API | http://127.0.0.1:1975/v1/models |
+| Agent Router Admin | http://127.0.0.1:1064/health |
+| Opik UI | http://127.0.0.1:5181 |
+
+Adminは内部でIPv4専用proxy経由になるため、Windowsの `http://127.0.0.1:1064/health` でも到達できます。`make agent-router-up` で自動起動します。
+
+到達しない場合は WSL IP でも試せます（NATモード時）:
+
+```bash
+echo "http://$(hostname -I | awk '{print $1}'):1064/health"
+```
+
 ## 6. Smoke Test
 
 ```bash

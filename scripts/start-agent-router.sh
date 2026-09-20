@@ -40,4 +40,38 @@ export AI_GATEWAY_TRACING_SEMCONV="${AI_GATEWAY_TRACING_SEMCONV:-openinference}"
 export OPENINFERENCE_HIDE_INPUTS="${OPENINFERENCE_HIDE_INPUTS:-false}"
 export OPENINFERENCE_HIDE_OUTPUTS="${OPENINFERENCE_HIDE_OUTPUTS:-false}"
 
-exec "$AIGW_BIN" run "$@"
+# Windowsブラウザ向け: aigw adminは内部1065、IPv4専用proxyが公開1064を担当する。
+ADMIN_PUBLIC_PORT="${AGENT_ROUTER_ADMIN_PORT:-1064}"
+ADMIN_UPSTREAM_PORT="${AGENT_ROUTER_ADMIN_UPSTREAM_PORT:-1065}"
+PROXY_PID=""
+
+cleanup() {
+  if [[ -n "${PROXY_PID}" ]] && kill -0 "${PROXY_PID}" 2>/dev/null; then
+    kill "${PROXY_PID}" 2>/dev/null || true
+    wait "${PROXY_PID}" 2>/dev/null || true
+  fi
+}
+trap cleanup EXIT INT TERM
+
+UV_CACHE_DIR="${UV_CACHE_DIR:-$ROOT_DIR/.uv-cache}" \
+  uv run --link-mode=copy python "$ROOT_DIR/scripts/windows-ipv4-proxy.py" \
+    --listen-host 0.0.0.0 \
+    --listen-port "${ADMIN_PUBLIC_PORT}" \
+    --upstream-host 127.0.0.1 \
+    --upstream-port "${ADMIN_UPSTREAM_PORT}" &
+PROXY_PID=$!
+
+# proxyの待受開始を短く待つ
+for _ in $(seq 1 20); do
+  if curl -fsS --max-time 1 "http://127.0.0.1:${ADMIN_PUBLIC_PORT}/health" >/dev/null 2>&1 \
+    || ss -ltn "sport = :${ADMIN_PUBLIC_PORT}" | rg -q ":${ADMIN_PUBLIC_PORT}"; then
+    break
+  fi
+  sleep 0.1
+done
+
+echo "Windows browser admin proxy: http://127.0.0.1:${ADMIN_PUBLIC_PORT}/health -> 127.0.0.1:${ADMIN_UPSTREAM_PORT}"
+echo "Agent Router OpenAI gateway: http://127.0.0.1:1975/v1"
+echo "Opik UI: http://127.0.0.1:5181"
+
+exec "$AIGW_BIN" run --admin-port="${ADMIN_UPSTREAM_PORT}" "$@"
