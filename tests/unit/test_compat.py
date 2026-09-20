@@ -156,6 +156,43 @@ async def test_call_llama_server_accepts_legacy_timeout_and_retry_kwargs(
 
     assert result.startswith("prompt=Hello;model=model;")
     assert created[0].config.timeout_seconds == 30.0
-    assert created[0].config.max_retries == 7
+    # 旧APIの max_retries は「最大試行回数」。新内部は「再試行回数」なので -1。
+    assert created[0].config.max_retries == 6
     assert created[0].config.retry_base_seconds == 1.0
     assert created[0].config.retry_max_seconds == 10.0
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("legacy_max_retries", "internal_max_retries"),
+    [
+        (0, 0),
+        (1, 0),
+        (2, 1),
+        (5, 4),
+        (7, 6),
+    ],
+)
+async def test_call_llama_server_maps_legacy_max_retries_as_total_attempts(
+    monkeypatch: pytest.MonkeyPatch,
+    legacy_max_retries: int,
+    internal_max_retries: int,
+) -> None:
+    created: list[FakeGatewayClient] = []
+
+    def factory(config: LLMGatewayEnvConfig, **kwargs: object) -> FakeGatewayClient:
+        client = FakeGatewayClient(config, **kwargs)
+        created.append(client)
+        return client
+
+    monkeypatch.setattr("llm_gateway.client.LLMGatewayClient", factory)
+
+    await call_llama_server(
+        ForbiddenLegacyClient(),
+        "model",
+        "Hello",
+        max_retries=legacy_max_retries,
+        config=make_config(),
+    )
+
+    assert created[0].config.max_retries == internal_max_retries

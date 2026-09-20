@@ -249,6 +249,11 @@ class LLMGatewayClient:
         await self.close()
 
 
+def _legacy_max_retries_to_internal(max_retries: int) -> int:
+    """旧 call_llama_server の max_retries（最大試行回数）を新内部値（再試行回数）へ変換する。"""
+    return max(0, max_retries - 1)
+
+
 def _apply_legacy_generation_overrides(
     config: LLMGatewayEnvConfig,
     *,
@@ -274,7 +279,11 @@ def _apply_legacy_generation_overrides(
         timeout_seconds=(
             config.timeout_seconds if timeout_seconds is None else timeout_seconds
         ),
-        max_retries=config.max_retries if max_retries is None else max_retries,
+        max_retries=(
+            config.max_retries
+            if max_retries is None
+            else _legacy_max_retries_to_internal(max_retries)
+        ),
         retry_base_seconds=(
             config.retry_base_seconds
             if retry_base_delay_seconds is None
@@ -358,6 +367,8 @@ async def call_llama_server(
 
     旧シグネチャの `client` はllama-server直結用だったため使わず、
     内部では必ずAgent Router経由の `LLMGatewayClient` に委譲する。
+    旧APIの `max_retries` は最大試行回数であり、新内部の再試行回数へは
+    `max(0, max_retries - 1)` で変換する。
     """
     if isinstance(prompt_or_client, str):
         if prompt is not None:
