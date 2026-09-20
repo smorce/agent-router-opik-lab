@@ -70,6 +70,7 @@ class LLMGatewayClient:
     ) -> None:
         self.config = config
         if task_router is None:
+            # 現状は Dummy のみ。将来 classifier / llm / jev 等を TASK_ROUTER_MODE で選択する。
             if config.task_router_mode != "dummy":
                 raise ValueError(
                     f"Unsupported TASK_ROUTER_MODE: {config.task_router_mode}"

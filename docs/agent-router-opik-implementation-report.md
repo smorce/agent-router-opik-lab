@@ -113,7 +113,7 @@ OTEL_AIGW_SPAN_REQUEST_HEADER_ATTRIBUTES=agent-session-id:session.id,x-session-i
 
 ## 未実装
 
-- 本物のClassifier、LLM、MoEによるTask Router
+- 本物のClassifier、LLM、MoE、JevによるTask Router
 - OpenAI、Anthropic、Gemini、Bedrock、GroqなどのApplication側Provider実装
 - Provider fallback、Cost-aware routing、Difficulty-aware routing
 - Kubernetes、複数Agent Router、TLS、OAuth、Production Rate Limit、Quota
@@ -122,7 +122,7 @@ OTEL_AIGW_SPAN_REQUEST_HEADER_ATTRIBUTES=agent-session-id:session.id,x-session-i
 
 ## 次の実装候補
 
-1. 本物のTask Router
+1. 本物のTask Router（Classifier / LLM / Jev 等）
 2. OpenAI追加
 3. Anthropic追加
 4. Gemini追加

@@ -2,7 +2,11 @@ from .models import RouteDecision
 
 
 class DummyTaskRouter:
-    """交換可能なTask Routerの最小実装。HTTP通信は担当しない。"""
+    """交換可能なTask Routerの最小実装。HTTP通信は担当しない。
+
+    将来は Classifier / LLM / Jev ベースの実装へ差し替える想定。
+    Jevは文章を生成せず判断データのみを返すモデルで、ルーティング判定に向く。
+    """
 
     def __init__(self, default_model: str) -> None:
         if not default_model.strip():

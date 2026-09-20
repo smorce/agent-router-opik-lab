@@ -2,7 +2,7 @@
 
 ![Opik](assets/comet-opik-readable-high.gif)
 
-Applicationからllama-serverを直接呼び出さず、Task RouterとAgent Routerを経由してローカルLLMへ接続する最小構成です。Task Routerは現在 `DummyTaskRouter` ですが、将来ClassifierやLLMベースの実装へ差し替えられるインターフェースに分離しています。
+Applicationからllama-serverを直接呼び出さず、Task RouterとAgent Routerを経由してローカルLLMへ接続する最小構成です。Task Routerは現在 `DummyTaskRouter` ですが、将来Classifier・LLMベース・Jev（判断専用モデル）実装へ差し替えられるインターフェースに分離しています。
 
 最短手順は [Quick Start](docs/QUICKSTART.md) を参照してください。
 
@@ -20,7 +20,7 @@ flowchart TD
 責務は次のように分かれます。
 
 - Application: `LLMGatewayClient`を使ってプロンプトを送る。
-- Task Router: `Auto`を実モデル名へ解決する。HTTP通信は行わない。
+- Task Router: `Auto`を実モデル名へ解決する。HTTP通信は行わない。現状はDummyで、将来Classifier / LLM / Jevへ差し替え可能。
 - Agent Router: Provider通信、OpenAI互換API、将来のRetry/Fallback/Rate Limitの境界を担当する。
 - Opik: Agent Routerから送られるOpenTelemetry Traceを観測・評価する。
 

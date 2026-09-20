@@ -31,7 +31,8 @@ Agent Router -- OTLP HTTP/protobuf --> Opik :5181
 - `TaskRouter` Protocolを実装する。
 - `RouteDecision`にmodel、provider、reasonを返す。
 - モデル選択だけを担当し、HTTP通信を行わない。
-- `Auto`解決をDummy実装からClassifier、LLM、MoE実装へ差し替えられる。
+- `Auto`解決をDummy実装からClassifier、LLM、MoE、Jev実装へ差し替えられる。
+- Jev（ジェブ）は TypeSafe AI が2026年9月15日に公開した判断専用モデルで、文章を生成せず高速・正確な判断データのみを返す。Task Routerのモデル選択に適する。
 
 ### Agent Router
 
