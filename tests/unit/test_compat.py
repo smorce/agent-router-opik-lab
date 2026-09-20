@@ -128,3 +128,34 @@ async def test_call_llama_server_legacy_keyword_arguments(
     )
 
     assert result.startswith("prompt=Hi;model=legacy-model;thinking=False")
+
+
+@pytest.mark.asyncio
+async def test_call_llama_server_accepts_legacy_timeout_and_retry_kwargs(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    created: list[FakeGatewayClient] = []
+
+    def factory(config: LLMGatewayEnvConfig, **kwargs: object) -> FakeGatewayClient:
+        client = FakeGatewayClient(config, **kwargs)
+        created.append(client)
+        return client
+
+    monkeypatch.setattr("llm_gateway.client.LLMGatewayClient", factory)
+
+    result = await call_llama_server(
+        ForbiddenLegacyClient(),
+        "model",
+        "Hello",
+        timeout_seconds=30,
+        max_retries=7,
+        retry_base_delay_seconds=1.0,
+        retry_max_delay_seconds=10.0,
+        config=make_config(),
+    )
+
+    assert result.startswith("prompt=Hello;model=model;")
+    assert created[0].config.timeout_seconds == 30.0
+    assert created[0].config.max_retries == 7
+    assert created[0].config.retry_base_seconds == 1.0
+    assert created[0].config.retry_max_seconds == 10.0

@@ -258,6 +258,10 @@ def _apply_legacy_generation_overrides(
     top_k: int | None,
     min_p: float | None,
     max_tokens: int | None,
+    timeout_seconds: float | None = None,
+    max_retries: int | None = None,
+    retry_base_delay_seconds: float | None = None,
+    retry_max_delay_seconds: float | None = None,
 ) -> LLMGatewayEnvConfig:
     return replace(
         config,
@@ -267,6 +271,20 @@ def _apply_legacy_generation_overrides(
         top_k=config.top_k if top_k is None else top_k,
         min_p=config.min_p if min_p is None else min_p,
         max_tokens=config.max_tokens if max_tokens is None else max_tokens,
+        timeout_seconds=(
+            config.timeout_seconds if timeout_seconds is None else timeout_seconds
+        ),
+        max_retries=config.max_retries if max_retries is None else max_retries,
+        retry_base_seconds=(
+            config.retry_base_seconds
+            if retry_base_delay_seconds is None
+            else retry_base_delay_seconds
+        ),
+        retry_max_seconds=(
+            config.retry_max_seconds
+            if retry_max_delay_seconds is None
+            else retry_max_delay_seconds
+        ),
     )
 
 
@@ -282,6 +300,10 @@ async def call_llama_server(
     top_k: int | None = None,
     min_p: float | None = None,
     max_tokens: int | None = None,
+    timeout_seconds: float | None = None,
+    max_retries: int | None = None,
+    retry_base_delay_seconds: float | None = None,
+    retry_max_delay_seconds: float | None = None,
 ) -> str: ...
 
 
@@ -297,6 +319,10 @@ async def call_llama_server(
     top_k: int | None = None,
     min_p: float | None = None,
     max_tokens: int | None = None,
+    timeout_seconds: float | None = None,
+    max_retries: int | None = None,
+    retry_base_delay_seconds: float | None = None,
+    retry_max_delay_seconds: float | None = None,
     config: LLMGatewayEnvConfig | None = None,
 ) -> str: ...
 
@@ -312,6 +338,10 @@ async def call_llama_server(
     top_k: int | None = None,
     min_p: float | None = None,
     max_tokens: int | None = None,
+    timeout_seconds: float | None = None,
+    max_retries: int | None = None,
+    retry_base_delay_seconds: float | None = None,
+    retry_max_delay_seconds: float | None = None,
     config: LLMGatewayEnvConfig | None = None,
 ) -> str:
     """既存 `call_llama_server` 名を維持する互換関数。
@@ -320,7 +350,11 @@ async def call_llama_server(
         await call_llama_server(prompt, *, model="Auto", config=None)
 
     旧API:
-        await call_llama_server(client, model, prompt, *, enable_thinking=..., temperature=...)
+        await call_llama_server(
+            client, model, prompt, *, enable_thinking=..., temperature=...,
+            timeout_seconds=..., max_retries=...,
+            retry_base_delay_seconds=..., retry_max_delay_seconds=...,
+        )
 
     旧シグネチャの `client` はllama-server直結用だったため使わず、
     内部では必ずAgent Router経由の `LLMGatewayClient` に委譲する。
@@ -350,6 +384,10 @@ async def call_llama_server(
         top_k=top_k,
         min_p=min_p,
         max_tokens=max_tokens,
+        timeout_seconds=timeout_seconds,
+        max_retries=max_retries,
+        retry_base_delay_seconds=retry_base_delay_seconds,
+        retry_max_delay_seconds=retry_max_delay_seconds,
     )
     client = LLMGatewayClient(gateway_config)
     try:

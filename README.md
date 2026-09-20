@@ -167,7 +167,7 @@ Application
   -> llama-server :2067/v1
 ```
 
-`LlamaServerEnvConfig`は既存の `cfg.complete("Hello")` APIを維持する互換wrapperです。内部では`LLMGatewayClient`へ委譲します。`call_llama_server`は新シグネチャ `call_llama_server(prompt, *, model="Auto")` に加え、旧シグネチャ `call_llama_server(client, model, prompt, *, enable_thinking=...)` も受け付けます。旧`client`は使わず、必ずAgent Router経由になります。
+`LlamaServerEnvConfig`は既存の `cfg.complete("Hello")` APIを維持する互換wrapperです。内部では`LLMGatewayClient`へ委譲します。`call_llama_server`は新シグネチャ `call_llama_server(prompt, *, model="Auto")` に加え、旧シグネチャ `call_llama_server(client, model, prompt, *, enable_thinking=..., timeout_seconds=..., max_retries=..., retry_base_delay_seconds=..., retry_max_delay_seconds=...)` も受け付けます。旧`client`は使わず、必ずAgent Router経由になります。
 
 ## Tests
 
